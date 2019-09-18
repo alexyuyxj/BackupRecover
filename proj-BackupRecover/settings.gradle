@@ -1,0 +1,2 @@
+include ':BackupRecover'
+project(':BackupRecover').projectDir = new File('../BackupRecover')

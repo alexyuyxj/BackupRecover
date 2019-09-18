@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">备份还原</string>
+
+	<string name="title_backup">备份</string>
+	<string name="title_recover">还原</string>
+	<string name="subtitle_backup">将应用数据备份到SD卡里面</string>
+	<string name="subtitle_recover">将已经备份的数据还原到应用中</string>
+
+	<string name="start_backup">开始备份</string>
+	<string name="operation_finished">操作结束</string>
+	<string name="detail">详情</string>
+	<string name="start_recover">开始还原</string>
+</resources>
