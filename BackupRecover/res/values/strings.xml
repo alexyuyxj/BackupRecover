@@ -11,4 +11,6 @@
 	<string name="operation_finished">操作结束</string>
 	<string name="detail">详情</string>
 	<string name="start_recover">开始还原</string>
+
+	<string name="backup_all">备份全部</string>
 </resources>

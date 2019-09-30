@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -66,7 +68,7 @@ public class BackupActivity extends BaseActivity {
 				holder.tvSubTitle.setText(pi.packageName);
 				holder.tvBackup.setOnClickListener(new OnClickListener() {
 					public void onClick(View view) {
-						backup(pi.packageName);
+						backup(new String[] {pi.packageName});
 					}
 				});
 				return convertView;
@@ -153,12 +155,14 @@ public class BackupActivity extends BaseActivity {
 		return icon;
 	}
 	
-	private void backup(final String packageName) {
+	private void backup(final String[] packageNames) {
 		Toast.makeText(BackupActivity.this, R.string.start_backup, Toast.LENGTH_SHORT).show();
 		new Thread() {
 			public void run() {
 				try {
-					MBR.backup(BackupActivity.this, packageName);
+					for (String packageName : packageNames) {
+						MBR.backup(BackupActivity.this, packageName);
+					}
 					runOnUiThread(new Runnable() {
 						public void run() {
 							Toast.makeText(BackupActivity.this, R.string.operation_finished, Toast.LENGTH_SHORT).show();
@@ -200,6 +204,23 @@ public class BackupActivity extends BaseActivity {
 		holder.flBackup.addView(holder.tvBackup, lpfl);
 		
 		return holder;
+	}
+	
+	public boolean onCreateOptionsMenu(Menu menu) {
+		menu.add(Menu.NONE, Menu.NONE, 1, R.string.backup_all);
+		return super.onCreateOptionsMenu(menu);
+	}
+	
+	public boolean onOptionsItemSelected(MenuItem item) {
+		if (item.getTitle().toString().equals(getString(R.string.backup_all))
+				&& apps != null && !apps.isEmpty()) {
+			ArrayList<String> pkgs = new ArrayList<String>();
+			for (PackageInfo pi : apps) {
+				pkgs.add(pi.packageName);
+			}
+			backup(pkgs.toArray(new String[pkgs.size()]));
+		}
+		return super.onOptionsItemSelected(item);
 	}
 	
 	private class BackupAppViewHolder extends ViewItemHolder {

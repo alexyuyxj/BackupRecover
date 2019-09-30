@@ -51,7 +51,7 @@ public class MBR {
 	public static void recover(String packageName, String copy) throws Throwable {
 		Process p = Runtime.getRuntime().exec("su");
 		OutputStream output = p.getOutputStream();
-		command("am force-stop " + packageName, output);
+		command("adb install -r -d " + packageName, output);
 		command("ls -lad " + DATA_P + packageName, output);
 		InputStream is = p.getInputStream();
 		BufferedReader br = new BufferedReader(new InputStreamReader(is, "utf-8"));

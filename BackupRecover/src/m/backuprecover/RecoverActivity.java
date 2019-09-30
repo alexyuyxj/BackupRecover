@@ -65,7 +65,7 @@ public class RecoverActivity extends BaseActivity {
 				String name = String.valueOf(pi.applicationInfo.loadLabel(getPackageManager()));
 				holder.tvTitle.setText(TextUtils.isEmpty(name) ? pi.packageName : name);
 				holder.tvSubTitle.setText(pi.packageName);
-				holder.tvDetail.setOnClickListener(new OnClickListener() {
+				holder.llItem.setOnClickListener(new OnClickListener() {
 					public void onClick(View view) {
 						Intent i = new Intent(RecoverActivity.this, DetailActivity.class);
 						i.putExtra("package", pi.packageName);
