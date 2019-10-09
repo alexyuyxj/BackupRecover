@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler.Callback;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -155,28 +157,19 @@ public class BackupActivity extends BaseActivity {
 		return icon;
 	}
 	
-	private void backup(final String[] packageNames) {
-		Toast.makeText(BackupActivity.this, R.string.start_backup, Toast.LENGTH_SHORT).show();
-		new Thread() {
-			public void run() {
-				try {
-					for (String packageName : packageNames) {
-						MBR.backup(BackupActivity.this, packageName);
-					}
-					runOnUiThread(new Runnable() {
-						public void run() {
-							Toast.makeText(BackupActivity.this, R.string.operation_finished, Toast.LENGTH_SHORT).show();
-						}
-					});
-				} catch (final Throwable t) {
-					runOnUiThread(new Runnable() {
-						public void run() {
-							Toast.makeText(BackupActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
-						}
-					});
+	private void backup(String[] packageNames) {
+		Toast.makeText(this, R.string.start_backup, Toast.LENGTH_SHORT).show();
+		MBR.backup(this, packageNames, new Callback() {
+			public boolean handleMessage(Message message) {
+				if (message.obj == null) {
+					Toast.makeText(BackupActivity.this, R.string.operation_finished, Toast.LENGTH_SHORT).show();
+				} else {
+					Throwable t = (Throwable) message.obj;
+					Toast.makeText(BackupActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
 				}
+				return false;
 			}
-		}.start();
+		});
 	}
 	
 	protected ViewItemHolder genItemView() {

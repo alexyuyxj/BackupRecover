@@ -1,9 +1,12 @@
 package m.backuprecover;
 
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler.Callback;
+import android.os.Message;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -18,8 +21,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -34,14 +39,42 @@ public class DetailActivity extends BaseActivity {
 		backups = new HashMap<File, Long>();
 		
 		final String packageName = getIntent().getStringExtra("package");
+		PackageInfo pi = null;
+		try {
+			pi = getPackageManager().getPackageInfo(packageName, 0);
+		} catch (Throwable t) {}
+		if (pi == null) {
+			File dir = new File(MBR.BASE_DIR, packageName);
+			String[] versions = dir.list();
+			Arrays.sort(versions);
+			File apk = null;
+			for (int i = versions.length - 1; i >= 0; i--) {
+				File[] apks = new File(dir, versions[i]).listFiles(new FileFilter() {
+					public boolean accept(File file) {
+						return file.getName().endsWith(".apk");
+					}
+				});
+				if (apks != null && apks.length > 0) {
+					apk = apks[0];
+					break;
+				}
+			}
+			if (apk != null) {
+				pi = getPackageManager().getPackageArchiveInfo(apk.getPath(), 0);
+				pi.applicationInfo.sourceDir = apk.getPath();
+				pi.applicationInfo.publicSourceDir = apk.getPath();
+			}
+		}
+		
 		String name = null;
 		Drawable icon = null;
-		try {
-			PackageInfo pi = getPackageManager().getPackageInfo(packageName, 0);
-			name = String.valueOf(pi.applicationInfo.loadLabel(getPackageManager()));
-			icon = pi.applicationInfo.loadIcon(getPackageManager());
-		} catch (Throwable t) {
-			t.printStackTrace();
+		if (pi != null) {
+			try {
+				name = String.valueOf(pi.applicationInfo.loadLabel(getPackageManager()));
+				icon = pi.applicationInfo.loadIcon(getPackageManager());
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
 		}
 		if (name == null) {
 			name = getString(R.string.title_recover);
@@ -146,24 +179,17 @@ public class DetailActivity extends BaseActivity {
 	
 	private void recover(final String packageName, final String backup) {
 		Toast.makeText(this, R.string.start_recover, Toast.LENGTH_SHORT).show();
-		new Thread() {
-			public void run() {
-				try {
-					MBR.recover(packageName, backup);
-					runOnUiThread(new Runnable() {
-						public void run() {
-							Toast.makeText(DetailActivity.this, R.string.operation_finished, Toast.LENGTH_SHORT).show();
-						}
-					});
-				} catch (final Throwable t) {
-					runOnUiThread(new Runnable() {
-						public void run() {
-							Toast.makeText(DetailActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
-						}
-					});
+		MBR.recover(this, packageName, backup, new Callback() {
+			public boolean handleMessage(Message message) {
+				if (message.obj == null) {
+					Toast.makeText(DetailActivity.this, R.string.operation_finished, Toast.LENGTH_SHORT).show();
+				} else {
+					Throwable t = (Throwable) message.obj;
+					Toast.makeText(DetailActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
 				}
+				return false;
 			}
-		}.start();
+		});
 	}
 	
 	protected ViewItemHolder genItemView() {

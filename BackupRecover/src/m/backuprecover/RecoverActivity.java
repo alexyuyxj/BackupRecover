@@ -21,11 +21,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 
 public class RecoverActivity extends BaseActivity {
 	private ArrayList<PackageInfo> apps;
@@ -94,9 +95,41 @@ public class RecoverActivity extends BaseActivity {
 	}
 	
 	private ArrayList<PackageInfo> fillLists() {
-		ArrayList<PackageInfo> res = new ArrayList<PackageInfo>();
+		ArrayList<PackageInfo> pis = new ArrayList<PackageInfo>();
+		String[] backups = MBR.listBackups();
 		final PackageManager pm = getPackageManager();
-		List<PackageInfo> pis = pm.getInstalledPackages(0);
+		for (String b : backups) {
+			PackageInfo pi = null;
+			try {
+				pi = pm.getPackageInfo(b, 0);
+			} catch (Throwable t) {}
+			if (pi == null) {
+				File dir = new File(MBR.BASE_DIR, b);
+				String[] versions = dir.list();
+				Arrays.sort(versions);
+				File apk = null;
+				for (int i = versions.length - 1; i >= 0; i--) {
+					File[] apks = new File(dir, versions[i]).listFiles(new FileFilter() {
+						public boolean accept(File file) {
+							return file.getName().endsWith(".apk");
+						}
+					});
+					if (apks != null && apks.length > 0) {
+						apk = apks[0];
+						break;
+					}
+				}
+				if (apk != null) {
+					pi = pm.getPackageArchiveInfo(apk.getPath(), 0);
+					pi.applicationInfo.sourceDir = apk.getPath();
+					pi.applicationInfo.publicSourceDir = apk.getPath();
+				}
+			}
+			if (pi != null) {
+				pis.add(pi);
+			}
+		}
+		
 		Collections.sort(pis, new Comparator<PackageInfo>() {
 			public int compare(PackageInfo lpi, PackageInfo rpi) {
 				String ln = null;
@@ -129,6 +162,7 @@ public class RecoverActivity extends BaseActivity {
 			}
 		});
 		
+		ArrayList<PackageInfo> res = new ArrayList<PackageInfo>();
 		String myPkg = getPackageName();
 		for (PackageInfo pi : pis) {
 			if (!pi.applicationInfo.packageName.equals(myPkg)) {
@@ -137,7 +171,6 @@ public class RecoverActivity extends BaseActivity {
 				}
 			}
 		}
-		
 		return res;
 	}
 	
